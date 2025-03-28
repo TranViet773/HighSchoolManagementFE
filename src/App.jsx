@@ -1,35 +1,90 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React from "react";
+import { ConfigProvider, App as AntApp } from "antd";
+import { ToastContainer } from "react-toastify";
+import DefaultComponent from "./components/DefaultComponent/DefaultComponent";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { publicRoutes, studentRoutes, teacherRoutes, adminRoutes, parentRoutes, staffRoutes } from "./routes";
+import { getInforJwt } from "./tools/utils";
+import "./index.css";
+import "./style.css";
+
+// Hàm lấy role từ localStorage
+
 
 function App() {
-  const [count, setCount] = useState(0)
+  const role = getInforJwt().role;
+
+  // Chọn routes theo role
+  let roleRoutes = [];
+  switch(role) {
+    case "STUDENT":
+      roleRoutes = studentRoutes;
+      break;
+    case "PARENT":
+      roleRoutes = parentRoutes;
+      break;
+    case "TEACHER":
+      roleRoutes = teacherRoutes;
+      break;
+    case "SYS_ADMIN":
+      roleRoutes = adminRoutes;
+      break;
+    case "SYS_ADMIN":
+      roleRoutes = adminRoutes;
+      break;  
+    case "MANAGERMENT_STAFF":
+        roleRoutes = staffRoutes;
+        break;
+    default:
+      roleRoutes = publicRoutes;
+      break;
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Tôi là Quốc Việt1</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is1 {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <ConfigProvider>
+      <AntApp>
+        <ToastContainer />
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes (Ai cũng truy cập được) */}
+            {publicRoutes.map(({ path, page: Page, isShowHeader }) => {
+              const Layout = isShowHeader ? DefaultComponent : React.Fragment;
+              return (
+                <Route
+                  key={path}
+                  path={path}
+                  element={
+                    <Layout>
+                      <Page />
+                    </Layout>
+                  }
+                />
+              );
+            })}
+
+            {/* Role-Based Routes */}
+            {roleRoutes.map(({ path, page: Page, isShowHeader }) => {
+              const Layout = isShowHeader ? DefaultComponent : React.Fragment;
+              return (
+                <Route
+                  key={path}
+                  path={path}
+                  element={
+                    <Layout>
+                      <Page />
+                    </Layout>
+                  }
+                />
+              );
+            })}
+
+            {/* Điều hướng nếu không có quyền */}
+            {role === "guest" && <Route path="*" element={<Navigate to="/" />} />}
+          </Routes>
+        </BrowserRouter>
+      </AntApp>
+    </ConfigProvider>
+  );
 }
 
-export default App
+export default App;

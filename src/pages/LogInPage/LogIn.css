@@ -1,0 +1,7 @@
+:root{
+    background-image: url("/src/assets/bg_login2.jpg");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-color: rgba(255, 255, 255, 0.8); /* Màu nền đen mờ */
+    background-blend-mode: overlay; /* Pha trộn màu */
+}

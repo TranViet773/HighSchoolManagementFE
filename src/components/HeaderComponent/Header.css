@@ -1,0 +1,14 @@
+.custom-menu{
+    background-color: #001529!important;
+   
+}
+.custom-item {
+    transition: background-color 0.3s ease-in-out;
+    padding: 10px 15px;
+    border-radius: 5px;
+    color: white !important;
+  }
+  
+  .custom-item:hover {
+    background-color: #1890ff; /* Màu xanh primary của Ant Design */
+  }
