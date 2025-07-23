@@ -27,7 +27,6 @@ const AddressComponent = ({ studentAddress, idUser }) => {
       }
     };
     fetchProvinces();
-    console.log(studentAddress)
   }, []);
 
   // Lấy danh sách huyện khi tỉnh thay đổi
@@ -111,7 +110,7 @@ const AddressComponent = ({ studentAddress, idUser }) => {
   };
 
   return (
-    <Card className="mt-2 mb-2 shadow-lg" title="Địa chỉ & Thông tin phụ huynh" variant="borderless" headStyle={{ backgroundColor: "#B5E7FF", color: "#333" }}>
+    <Card className="mt-2 mb-2 shadow-lg" title="Địa chỉ & Thông tin phụ huynh" variant="borderless" headStyle={{ backgroundColor: "#B5E7FF", color: "#333" }} style={{marginBottom: "20px"}}>
       <Form form={form} layout="vertical">
         <div className="grid grid-cols-3 gap-4">
           {/* Tỉnh */}

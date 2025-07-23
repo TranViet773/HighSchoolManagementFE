@@ -9,10 +9,15 @@ import "react-toastify/dist/ReactToastify.css";
 import {getInforJwt} from "../../tools/utils"
 const LogInPage = () => {
     const [visible, setVisible] = useState(false);
+    const [loading, setLoading] = useState(false);
+
     const Login = async (values) =>{
         const {email, password} = values;
+        setLoading(true)
         try {
+            console.log({email, password})
             const { data } =  await AuthService.Login({ email, password });
+            console.log(data)
             saveTokens(data.accessToken, data.refreshToken); // Save tokens to local storage
             toast.success('Login successful!', {
               autoClose: 1000,
@@ -39,13 +44,39 @@ const LogInPage = () => {
                     }
                     break;
                 case 'STUDENT':
-                    window.location.href = '/student';
+                    {
+                        //check xem pass có còn hiệu lực(được đổi lần đầu chưa)
+                        if(getInforJwt().IsActive == "False" || getInforJwt.IsBlocked == "False"){
+                            window.location.href = '/change-password'
+                        }
+                        else{
+                            if(getInforJwt.IsBlocked == "True"){
+                                window.location.href = '/abc';
+                            }
+                            else{
+                                window.location.href = `/student`;
+                            }
+                        }
+                    }
                     break;
                 case 'PARENT':
                         window.location.href = '/parent';
                         break;
                 case 'MANAGERMENT_STAFF':
-                    window.location.href = '/staff';
+                    {
+                        //check xem pass có còn hiệu lực(được đổi lần đầu chưa)
+                        if(getInforJwt().IsActive == "False" || getInforJwt.IsBlocked == "False"){
+                            window.location.href = '/change-password'
+                        }
+                        else{
+                            if(getInforJwt.IsBlocked == "True"){
+                                window.location.href = '/abc';
+                            }
+                            else{
+                                window.location.href = `/staff`;
+                            }
+                        }
+                    }
                     break;       
                 default:
                     toast.error('Role not found.', {
@@ -58,6 +89,8 @@ const LogInPage = () => {
               autoClose: 2000,
             });
           }
+
+          setLoading(false);
     }
     return (
         <div className="flex justify-center items-center w-screen">
@@ -92,9 +125,10 @@ const LogInPage = () => {
                             }
                         />
                     </Form.Item>
-                    <Form.Item>
-                        <Button type="primary" htmlType="submit" block>Đăng nhập</Button>
-                    </Form.Item>
+                    <Button type="primary" htmlType="submit" block loading={loading}>
+                        Đăng nhập
+                    </Button>
+
                     <p className="text-center text-sm text-gray-600">
                         Bạn chưa có tài khoản? <a href="/register" className="text-blue-500">Đăng ký ngay</a>
                     </p>

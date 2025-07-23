@@ -7,9 +7,11 @@ import StudentService from "../../../services/studentService";
 import ImportService from "../../../services/commonService";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import getCurrentYear from "../../../utils/year.util";
 
 const { Content } = Layout;
 const { Option } = Select;
+const year = getCurrentYear().schoolYear; // Lấy năm học hiện tại
 
 const CreateTeacherPage = () => {
   const [form] = Form.useForm();
@@ -21,7 +23,7 @@ const CreateTeacherPage = () => {
   const onFinish = async (values) => {
     const { lastName, firstName, email, gender, phone, doB } = values;
     
-    let password = `y8Emnxbk`; 
+    let password = `y8EmNxbk`; 
 
     // Chuyển đổi doB thành chuỗi YYYY-MM-DD
     const formattedDoB = doB.format("YYYY-MM-DD");
@@ -35,15 +37,16 @@ const CreateTeacherPage = () => {
         gender, 
         phone, 
         doB: formattedDoB, 
-        eRole
+        eRole,
+        year: year
       });
 
       if (data) {
-        toast.success("Student created successfully", { autoClose: 1000 });
-        navigate("/student");
+        toast.success("Teacher created successfully", { autoClose: 1000 });
+        navigate("/teacher");
       }
     } catch (error) {
-      toast.error("Student creation failed!", { autoClose: 1000 });
+      toast.error("Teacher creation failed!", { autoClose: 1000 });
     }
   };
 

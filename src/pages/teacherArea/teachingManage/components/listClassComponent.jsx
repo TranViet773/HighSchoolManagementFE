@@ -17,28 +17,32 @@ const ListClassComponent = ({selectedYear}) => {
     }, [selectedYear]);
 
     const fetchClassData = async () => {
-            try {
-                const { data } = await ClassService.getClassByTeacher({
-                    id: id,
-                    year: selectedYear,
-                    semester: ""
-                });
-                console.log(data);
-                if(data?.data.length > 0){
-                    const formattedData = data.data.map(item => ({
-                        subject: item.subject_Name,
-                        subjectId: item.subject_Id,
-                        classTitle: item.classes_Name, 
-                        class_Id: item.classes_Id,       
-                        schoolYear: item.year,             
-                        bg: `https://picsum.photos/300/200?random=${Math.floor(Math.random() * 1000)}` 
-                    }));
-                    setClassData(formattedData);
-                }
-            }catch(error){
-                console.log("Lỗi: " + error);
-                toast.error("Lỗi khi tải dữ liệu lớp. Vui lòng thử lại!");
-            }
+      try {
+        console.log({selectedYear})
+        const { data } = await ClassService.getClassByTeacher({
+          id: id,
+          year: selectedYear,
+          semester: "all"
+        });
+        console.log("Class By teacher", data);
+        if(data.data !=null && data?.data.length > 0){
+          const formattedData = data.data.map(item => ({
+              subject: item.subject_Name,
+              subjectId: item.subject_Id,
+              classTitle: item.classes_Name, 
+              class_Id: item.classes_Id,       
+              schoolYear: item.year,             
+              bg: `https://picsum.photos/300/200?random=${Math.floor(Math.random() * 1000)}` 
+          }));
+          setClassData(formattedData);
+        }
+        if(data.data == null){
+          setClassData([]);
+        }
+      }catch(error){
+        console.log("Lỗi: " + error);
+        toast.error("Lỗi khi tải dữ liệu lớp. Vui lòng thử lại!");
+      }
     }
     // Lọc dữ liệu theo tên lớp (classTitle)
     const filteredData = classData.filter(item =>

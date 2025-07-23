@@ -8,17 +8,12 @@ import AuthService from "../../../services/authService";
 import TeacherService from "../../../services/teacherService";
 import StudentService from "../../../services/studentService";
 import SelectAdvisorPopup from "../../../components/OthersComponent/PopupTeacher";
-
+import getCurrentYear from "../../../utils/year.util";
+const { schoolYear, listYear, semester } = getCurrentYear();
+const curYear = new Date().getFullYear();
 const { Title } = Typography;
 const { Option } = Select;
 
-const curYear = new Date().getFullYear();
-const schoolYear = `${curYear}-${curYear + 1}`;
-const years = [
-  `${curYear - 2}-${curYear - 1}`,
-  `${curYear - 1}-${curYear}`,
-  `${curYear}-${curYear + 1}`,
-];
 const SubjectDetailPage = () => {
   const id = useParams();
   const [selectedYear, setSelectedYear] = useState(schoolYear);
@@ -73,6 +68,7 @@ const SubjectDetailPage = () => {
     const { data } = await SubjectService.getById(id.id);
     setSubject(data);
   }
+
   const handleYearChange = (year) => {
     setSelectedYear(year);
   };
@@ -142,6 +138,7 @@ const SubjectDetailPage = () => {
     setSelectedTeacher(null); 
     setShowPopup(true);
   };
+  
   const handleCancel = () => {
     setShowPopup(false);
     form.resetFields();
@@ -158,17 +155,19 @@ const SubjectDetailPage = () => {
       render: (_, record) =>
         record.teacher && record.teacher !== "-" ? (
           <>
-            <Button type="link" 
-            disabled={record.year == curYear ? true : false}
+            <Button type="primary" 
+            disabled={selectedYear == schoolYear ? false : true}
             onClick={() => {
-                console.log("Class ID:", record.classes_Id);
+                console.log("Class ID:", record.year);
                 setIsAssign(false); 
                 handleOpenModal(record);
                 form.setFieldsValue({ selectClass: record.classes_Id }); 
               }
-            }>sửa
+            }>Sửa
           </Button>
-          <Button type="link" 
+          <Button type="primary" 
+            className="ml-2"
+            disabled={selectedYear == schoolYear ? false : true}
             danger
             onClick={() => {
                 console.log("Class ID:", record.classes_Id);
@@ -179,7 +178,7 @@ const SubjectDetailPage = () => {
                 console.log("teacher ID:", teacher);
                 handleDeleteTeacherFromSubject();
               }
-            }>xóa
+            }>Xóa
           </Button>
           </>
         ) : (
@@ -192,7 +191,6 @@ const SubjectDetailPage = () => {
               }
             }>Thêm
           </Button>
-
         ),
     },
     
@@ -214,17 +212,17 @@ const SubjectDetailPage = () => {
       <Layout style={{ padding: "20px", display: "flex", flexDirection: "column", alignItems: "center" }}>
         <div className="site-layout-content" style={{ width: "100%" }}>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "100%" }}>
-            <Title level={2}>
+            <Title level={1}>
               Tên môn học: {subject ? subject.subject_Name : "Đang tải..."}
             </Title>
-            <Title level={2}>
+            <Title level={5} style={{ marginBottom: 10 }}>
               Mã số môn học: {subject ? subject.subject_Id : "Đang tải..."}
             </Title>
 
             <div style={{ marginBottom: 20 }}>
               <span>Chọn năm học: </span>
               <Select value={selectedYear} onChange={handleYearChange} style={{ width: 120 }}>
-                {years.map((year) => (
+                {listYear.map((year) => (
                   <Option key={year} value={year}>
                     {year}
                   </Option>

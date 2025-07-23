@@ -2,14 +2,14 @@ import { Phone } from "lucide-react";
 import axiosInstance from "../../tools/axios.tool";
 import { Avatar } from "antd";
 const StudentManageService = {
-    async UpdateStudent({ id, FullName, Email, Gender, Phone, Avatar, DoB }) {
+    async UpdateStudent({ id, FullName, Email, Gender, PhoneNumber, Avatar, DoB }) {
         try {
-            console.log("Dữ liệu gửi lên:", { id, FullName, Email, Gender, Phone, Avatar, DoB });
+            console.log("Dữ liệu gửi lên:", { id, FullName, Email, Gender, PhoneNumber, Avatar, DoB });
             const response = await axiosInstance.put(`/Teacher/update-student/${id}`, {
                 FullName,
                 Email,
                 Gender,
-                Phone,
+                PhoneNumber,
                 Avatar,
                 DoB
             });

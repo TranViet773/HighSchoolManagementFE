@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Sidebar from "../../components/SideBarComponent/SidebarComponent";
-import { Layout, Button, Table, Space, message, Input, Row, Col, Modal, Form } from "antd";
+import { Layout, Button, Table, Space, message, Input, Row, Col, Modal, Form, Radio } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import { SearchOutlined } from "@ant-design/icons";
 import SubjectService from "../../services/subjectService";
@@ -64,11 +64,11 @@ const SubjectHomePage = () => {
   const handleAddSubject = async () => {
     try {
       const values = await form.validateFields(); // Lấy giá trị từ form
-      const { subjectName } = values;
+      const { subjectName, subjectScoringType } = values;
   
-      console.log(subjectName); // Kiểm tra giá trị
+      console.log(subjectName, subjectScoringType); // Kiểm tra giá trị
   
-      const { data } = await SubjectService.createSubject({subject_Name: subjectName});
+      const { data } = await SubjectService.createSubject({subject_Name: subjectName, subject_ScoringType: subjectScoringType});
   
       console.log(data); // Xem phản hồi từ API
       message.success("Thêm mới môn học thành công!");
@@ -149,9 +149,9 @@ const SubjectHomePage = () => {
               pageSize: pageSize,
               onChange: (page) => setCurrentPage(page),
             }}
-            // onRow={(record) => ({
-            //   onClick: () => navigate(`/admin/class/${record.classes_Id}`),
-            // })}
+            onRow={(record) => ({
+              onClick: () => navigate(`/admin/subject/${record.subject_Id}`),
+            })}
           />
         </Content>
       </Layout>
@@ -172,6 +172,14 @@ const SubjectHomePage = () => {
             rules={[{ required: true, message: "Vui lòng nhập tên môn học!" }]}
           >
             <Input placeholder="Nhập tên môn học" />
+          </Form.Item>
+          <Form.Item
+            name="subjectScoringType"
+          >
+            <Radio.Group defaultValue={false}>
+              <Radio value={false}>Đánh giá bằng điểm</Radio>
+              <Radio value={true}>Đánh giá bằng nhận xét</Radio>
+            </Radio.Group>
           </Form.Item>
         </Form>
       </Modal>

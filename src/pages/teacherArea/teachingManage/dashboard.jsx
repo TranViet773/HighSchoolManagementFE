@@ -2,24 +2,16 @@ import React, { useState } from 'react';
 import { Layout, Row, Col, Segmented, Select, Card, Input } from 'antd';
 import SidebarTeacher from '../../../components/SideBarComponent/SideBarTeacher';
 import ListClassComponent from './components/listClassComponent';
+import getCurrentYear from '../../../utils/year.util';
 
+const { schoolYear, listYear, semester } = getCurrentYear();
 const { Content } = Layout;
 const { Option } = Select;
 const { Search } = Input;
 
-// Tính năm học hiện tại và danh sách năm học để chọn
-const curYear = new Date().getFullYear();
-const schoolYear = `${curYear}-${curYear + 1}`;
-const optionSchoolYear = [
-  `${curYear - 2}-${curYear - 1}`,
-  `${curYear - 1}-${curYear}`,
-  `${curYear}-${curYear + 1}`,
-];
-
 
 const TeachingManager = () => {
-  const [selectedYear, setSelectedYear] = useState(schoolYear);
-
+  const [selectedYear, setSelectedYear] = useState(listYear[2]); // Mặc định chọn năm học đầu tiên trong danh sách
   return (
     <Layout style={{ minHeight: "100vh" }}>
       <SidebarTeacher />
@@ -29,7 +21,7 @@ const TeachingManager = () => {
           <Row justify="space-between" align="middle" style={{ marginBottom: 20 }}>
             <Col>
               <Select value={selectedYear} onChange={setSelectedYear} style={{ width: 150 }}>
-                {optionSchoolYear.map(year => (
+                {listYear.map(year => (
                   <Option key={year} value={year}>{year}</Option>
                 ))}
               </Select>

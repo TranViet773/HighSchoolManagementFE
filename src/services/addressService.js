@@ -31,6 +31,7 @@ const AddressService = {
 
     async updateAddressForUser(idUser, wardId, detail){
         try{
+            console.log("address: " ,{idUser, wardId, detail})
             const response = await axiosInstance.put(`/Address/update-address-user/`,{
                 Address_Detail: detail,
                 Ward_Id: wardId,
@@ -45,6 +46,7 @@ const AddressService = {
 
     async createAddressForUser(idUser, wardId, detail){
         try{
+            console.log({idUser, detail, wardId})
             const response = await axiosInstance.post(`/Address/create`,{
                 Address_Detail: detail,
                 Ward_Id: wardId,

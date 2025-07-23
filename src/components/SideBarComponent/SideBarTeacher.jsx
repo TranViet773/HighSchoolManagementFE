@@ -1,8 +1,13 @@
-import React from "react";
-import { Layout, Menu } from "antd";
-import { DesktopOutlined, UserOutlined, BankOutlined, BookOutlined } from "@ant-design/icons";
+import React, { useState } from "react";
+import { Layout, Menu, Button } from "antd";
+import {
+  DesktopOutlined,
+  BookOutlined,
+  FileSearchOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+} from "@ant-design/icons";
 import { useLocation, Link } from "react-router-dom";
-import { Library, Users, Briefcase } from "lucide-react";
 import "../SideBarComponent/SideBar.css";
 import { getInforJwt } from "../../tools/utils";
 
@@ -10,38 +15,88 @@ const { Sider } = Layout;
 
 const SidebarTeacher = () => {
   const location = useLocation();
-  const selectedKey = location.pathname.startsWith("/teacher/teaching/")
-    ? "/teacher/teaching/"
-    : location.pathname.startsWith("/teacher/advisor/")
+  const [collapsed, setCollapsed] = useState(false);
+  const toggleCollapsed = () => setCollapsed(!collapsed);
+
+  const idUser = getInforJwt().Id;
+  const currentYear = new Date().getUTCFullYear().toString();
+  const isAdvisor =
+    getInforJwt().isAdvisor === "True"
+    // getInforJwt().timeAdvisor === currentYear;
+    // console.log("isAdvisor", isAdvisor);
+    // console.log("currentYear", currentYear);
+  const selectedKey = location.pathname.startsWith("/teacher/advisor/")
     ? "/teacher/advisor/"
+    : location.pathname.startsWith("/teacher/teaching/")
+    ? "/teacher/teaching/"
+    : location.pathname.startsWith("/teacher/submition/")
+    ? "/teacher/submition/"
     : "";
 
-  //const selectedKey = location.pathname;
-  const idUser = getInforJwt().Id;
-  let is_Advisor;
-  const currentYear = new Date().getUTCFullYear().toString(); // Lấy năm hiện tại
-  if(getInforJwt().isAdvisor == "True" && getInforJwt().timeAdvisor == currentYear){ // cần lưu ý nhưng giá trị của year sẽ được chỉnh sửa thành năm học như thực tế
-    is_Advisor = true;
-  }
   return (
-    <Sider width={250} className="text-white shadow-lg sidebar-custom">
-      <div className="flex items-center justify-center p-6">
-        <h2 className="text-2xl font-bold text-white">Quản lý giáo viên</h2>
+    <Sider
+      collapsible
+      collapsed={collapsed}
+      trigger={null}
+      width={250}
+      className="shadow-lg sidebar-custom"
+    >
+      <div className="flex items-center justify-between px-4 py-3 bg-gray-800">
+        {!collapsed && (
+          <h2 className="text-white text-lg font-bold">Quản lý giáo viên</h2>
+        )}
+        <Button
+          type="text"
+          icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+          onClick={toggleCollapsed}
+          style={{ color: "white" }}
+        />
       </div>
-      <Menu mode="inline" theme="dark" selectedKeys={[selectedKey]} className="text-white">
-      {is_Advisor && (
-        <Menu.Item key="/teacher/advisor/" icon={<DesktopOutlined />} className="hover:bg-blue-700">
-          <Link to={`/teacher/advisor/${idUser}`} className="text-white hover:text-yellow-300">
-            Quản lý chủ nhiệm
-          </Link>
-        </Menu.Item>
-      )}
-      <Menu.Item key="/teacher/teaching/" icon={<UserOutlined />} className="hover:bg-blue-700">
-        <Link to={`/teacher/teaching/${idUser}`} className="text-white hover:text-yellow-300">
-          Quản lý giảng dạy
-        </Link>
-      </Menu.Item>
-    </Menu>
+
+      <Menu
+        mode="inline"
+        theme="dark"
+        selectedKeys={[selectedKey]}
+        defaultOpenKeys={["sub1"]}
+        inlineCollapsed={collapsed}
+      >
+        {isAdvisor && (
+          <Menu.Item
+            key="/teacher/advisor/"
+            icon={<DesktopOutlined />}
+            className="hover:bg-blue-700"
+          >
+            <Link to={`/teacher/advisor/${idUser}`}>
+              Quản lý chủ nhiệm
+            </Link>
+          </Menu.Item>
+        )}
+
+        <Menu.SubMenu
+          key="sub1"
+          icon={<BookOutlined />}
+          title="Học vụ"
+        >
+          <Menu.Item
+            key="/teacher/submition/"
+            icon={<FileSearchOutlined />}
+            className="hover:bg-blue-700"
+          >
+            <Link to={`/teacher/submition/`}>
+              Phúc khảo
+            </Link>
+          </Menu.Item>
+          <Menu.Item
+            key="/teacher/teaching/"
+            icon={<DesktopOutlined />}
+            className="hover:bg-blue-700"
+          >
+            <Link to={`/teacher/teaching/${idUser}`}>
+              Giảng dạy
+            </Link>
+          </Menu.Item>
+        </Menu.SubMenu>
+      </Menu>
     </Sider>
   );
 };

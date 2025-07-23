@@ -2,23 +2,45 @@ import React, { useEffect, useState } from "react";
 import { Table, Input, Typography, Row, Col, Select, Button } from "antd";
 import ScoreService from "../../../../services/scoreService";
 import { toast } from "react-toastify";
+import getCurrentYear from "../../../../utils/year.util";
+import ExportExcelButton from "../../../../components/ExportComponent/ExportExcelButton";
+
+const { schoolYear, semester } = getCurrentYear();
 const { Option } = Select;
 const { Title } = Typography;
 const currentTime = new Date();
 
-const ScoreTable = ({ students, year, subjectId }) => {
+const ScoreTable = ({ students, year, subject, classData }) => {
   const [studentData, setStudentData] = useState(students);
-  const [selectedSemester, setSelectedSemester] = useState("1");
+  const [selectedSemester, setSelectedSemester] = useState(semester);
   //const [sortOrder, setSortOrder] = useState(null);
   const [scores, setScores] = useState();
   const [scoreChanges, setScoreChanges] = useState([]); // dữ liệu khi cập nhật
+  const [csvScoreData, setCSVScoreData] = useState([]);
+
+  const headers = [
+    { label: "STT", key: "stt" },
+    { label: "Mã số", key: "code" },
+    { label: "Họ tên", key: "fullName" },
+    { label: "Miệng 1", key: "OralScore" },
+    { label: "Miệng 2", key: "OralScore1" },
+    { label: "Miệng 3", key: "OralScore2" },
+    { label: "15p 1", key: "QuizScore" },
+    { label: "15p 2", key: "QuizScore1" },
+    { label: "15p 3", key: "QuizScore2" },
+    { label: "Giữa kỳ", key: "TestScore" },
+    { label: "Cuối kỳ", key: "FinalExamScore" },
+    { label: "TBM Cuối kỳ", key: "AverageScore" },
+    { label: "TB Cả năm", key: "FinalAverageSubjectScore" }
+  ];
 
   useEffect(() => {
-    console.log(studentData);
+    //console.log(studentData);
     for( let i = 1; i<3; i++){
       studentData?.map((student, index) => {
-        console.log(student);
-        InitializeScoreBoard(student.id, year, i);
+        //console.log(student);
+        //InitializeScoreBoard(student.id, year, i);
+        InitializeScoreBoardForSubject(student.id, year, i, subject.subjectId);
       });
     }
     
@@ -28,11 +50,35 @@ const ScoreTable = ({ students, year, subjectId }) => {
     fetchScoreOfStudent();
   }, [selectedSemester])
 
-  const InitializeScoreBoard = async (id, year, semester) =>{
-    try{
-      const {data} = await ScoreService.InitializeScoreBoard({studentId: id, year: year, semester: semester});
-    }catch(e){
+  useEffect(() => {
+    if(scores?.length > 0){
+      const csvData = scores.map((item, index) => ({
+        stt: index + 1,
+        code: item.code,
+        fullName: item.fullName,
+        OralScore: item.OralScore ?? "",
+        OralScore1: item.OralScore1 ?? "",
+        OralScore2: item.OralScore2 ?? "",
+        QuizScore: item.QuizScore ?? "",
+        QuizScore1: item.QuizScore1 ?? "",
+        QuizScore2: item.QuizScore2 ?? "",
+        TestScore: item.TestScore ?? "",
+        FinalExamScore: item.FinalExamScore ?? "",
+        AverageScore: item.AverageScore?.toFixed(2) ?? "",
+        FinalAverageSubjectScore: item.FinalAverageSubjectScore ?? ""
+      }));
 
+      console.log(csvData);
+      setCSVScoreData(csvData);
+    }
+  }, scores);
+
+
+  const InitializeScoreBoardForSubject = async (id, year, semester, subjectId) =>{
+    try{
+      const {data} = await ScoreService.InitializeScoreBoardForSubject({studentId: id, year: year, semester: semester, subjectId: subjectId});
+    }catch(e){
+      
     }
   }
 
@@ -42,39 +88,49 @@ const ScoreTable = ({ students, year, subjectId }) => {
       studentData.map(student => {
         studentIds.push({ studentId: student.id });
       });
-      console.log(subjectId);
-      const {data} = await ScoreService.GetScoreBySubject({subjectId: subjectId, year: year, semester: selectedSemester, studentIds});
+      //console.log(subjectId);
+      const {data} = await ScoreService.GetScoreBySubject({subjectId: subject.subjectId, year: year, semester: selectedSemester, studentIds});
       console.log(data);
       const mergedData = studentData.map((student, index) => {
-        const score = data?.data?.scoreOfSubjectResponses.find(s => s.studentId === student.id) || {};
-        return{
+      const score = data?.data?.scoreOfSubjectResponses.find(s => s.studentId === student.id) || {};
+      const finalSubjectAverageScore = data?.data?.finalSubjectAverageScore.find(s => s.studentId === student.id) || {};
+        
+      return{
           id: student.id,
           code: student.code,
           fullName: student.fullName,
-          ORALSCORE: score.oralScore,
-          QUIZSCORE: score.quizScore,
-          TESTSCORE: score.testScore,
-          MIDTERMSCORE: score.midTearmScore,
-          FINALEXAMSCORE: score.finalExamScore,
+          OralScore: score.oralScore,
+          OralScore1: score.oralScore1,
+          OralScore2: score.oralScore2,
+          OralScore3: score.oralScore3,
+          QuizScore: score.quizScore,
+          QuizScore1: score.quizScore1,
+          QuizScore2: score.quizScore2,
+          QuizScore3: score.quizScore3,
+          TestScore: score.testScore,
+          FinalExamScore: score.finalExamScore,
           oralScore_Timestamp: score.oralScore_Timestamp,
-          oralScore_Expire: score.oralScore_Expire ? new Date(score.oralScore_Expire) : null,
+          oralScore1_Timestamp: score.oralScore1_Timestamp,
+          oralScore2_Timestamp: score.oralScore2_Timestamp,
+          oralScore3_Timestamp: score.oralScore3_Timestamp,
           quizScore_Timestamp: score.quizScore_Timestamp,
-          quizScore_Expire: score.quizScore_Expire,
+          quizScore1_Timestamp: score.quizScore1_Timestamp,
+          quizScore2_Timestamp: score.quizScore2_Timestamp,
+          quizScore3_Timestamp: score.quizScore3_Timestamp,
           testScore_Timestamp: score.testScore_Timestamp,
-          testScore_Expire: score.testScore_Expire,
-          midTermScore_Timestamp: score.midTermScore_Timestamp,
-          midTermScore_Expire: score.midTermScore_Expire,
           finalExamScore_Timestamp: score.finalExamScore_Timestamp,
-          finalExamScore_Expire: score.finalExamScore_Expire,
-          finalEvaluation: score.comment,
-          finalEvaluation_Expire: score?.comment_Expire,
-          finalEvaluation_Timestamp: score?.comment_UpdateAt,
+          Comment: score.comment,
+          Comment_Expire: score?.comment_Expire,
+          Comment_UpdateAt: score?.comment_UpdateAt,
+          AverageScore: score?.averageScore,
+          ScoringType: score?.scoringType,
+          FinalAverageSubjectScore: finalSubjectAverageScore?.finalSubjectAverageScore
         }
       });
       console.log(mergedData)
       setScores(mergedData);
     }catch(e){
-
+      console.log(e);
     }
   }
 
@@ -113,15 +169,12 @@ const ScoreTable = ({ students, year, subjectId }) => {
 };
 
 
-  
-  
-
   const handleUpdateScore = async () =>{
     try{
       console.log("Cập nhật điểm");
       console.log("selectedSemester: " + selectedSemester + " " + year);
       console.log(scoreChanges)
-      const {data} = await ScoreService.UpdateScoreOfSubjectByColumn({subjectId: subjectId, year: year, semester: selectedSemester, scores: scoreChanges});
+      const {data} = await ScoreService.UpdateScoreOfSubjectByColumn({subjectId: subject.subjectId, year: year, semester: selectedSemester, scores: scoreChanges});
       console.log(data);
       toast.success("Cập nhật điểm thành công!");
     }catch(e){
@@ -158,6 +211,7 @@ const ScoreTable = ({ students, year, subjectId }) => {
       sortDirections: ["ascend", "descend"],
       render: (text) => <strong style={{ color: "#1890ff" }}>{text}</strong>,
     },
+
     {
       title: (
         <>
@@ -170,24 +224,46 @@ const ScoreTable = ({ students, year, subjectId }) => {
           </div>
         </>
       ),
-      dataIndex: "ORALSCORE",
-      key: "ORALSCORE",
-      align: "center",
-      width: 100,
-      sorter: (a, b) => a.code.localeCompare(b.code),
-      sortDirections: ["ascend", "descend"],
-      render: (text, record) => (
-        <Input
-          disabled={record.oralScore_Expire != null && currentTime > record.oralScore_Expire}
-          type="number"
-          min={0}
-          max={10}
-          step={0.1}
-          value={record.ORALSCORE ?? ""}
-          onChange={(e) => handleChange(record.id, "ORALSCORE", e.target.value)}
-        />
-      ),
+      children: ['', 1, 2, 3].map((index) => ({
+        dataIndex: `OralScore${index}`, // ví dụ: ORALSCORE1, ORALSCORE2, ...
+        key: `OralScore${index}`,
+        align: "center",
+        width: 80,
+        render: (text, record) => {
+          const timestamp = record[`oralScore${index}_Timestamp`];
+          const isDisabled = timestamp
+            ? new Date() > new Date(new Date(timestamp).getTime() +  2 * 60 * 1000)
+            : false;
+
+          return (
+            (
+              !record.ScoringType ? (
+                <Input
+                  className="no-spinner"
+                  disabled={isDisabled}
+                  type="number"
+                  min={0}
+                  max={10}
+                  step={0.1}
+                  value={record[`OralScore${index}`] ?? ""}
+                  onChange={(e) => handleChange(record.id, `OralScore${index}`, e.target.value)}
+                />
+              ) : (
+                <Select
+                  value={record[`OralScore${index}`] ?? ""}
+                  onChange={(e) => handleChange(record.id, `OralScore${index}`, e)}
+                  disabled={isDisabled}
+                >
+                  <Select.Option value={1}>Đ</Select.Option>
+                  <Select.Option value={0}>CĐ</Select.Option>
+                </Select>
+              )
+            )
+          );
+        },
+      })),
     },
+
     {
       title: (
         <>
@@ -200,23 +276,44 @@ const ScoreTable = ({ students, year, subjectId }) => {
           </div>
         </>
       ),
-      dataIndex: "QUIZSCORE",
-      key: "QUIZSCORE",
-      align: "center",
-      sorter: (a, b) => a.code.localeCompare(b.code),
-      sortDirections: ["ascend", "descend"],
-      width: 100,
-      width: 100,
-      render: (text, record) => (
-        <Input
-          type="number"
-          min={0}
-          max={10}
-          step={0.1}
-          value={record.QUIZSCORE}
-          onChange={(e) => handleChange(record.id, "QUIZSCORE", e.target.value)}
-        />
-      ),
+      children: ['', 1, 2, 3].map((index) => ({
+        dataIndex: `QuizScore${index}`, // ví dụ: ORALSCORE1, ORALSCORE2, ...
+        key: `QuizScore${index}`,
+        align: "center",
+        width: 75,
+        render: (text, record) => {
+          const timestamp = record[`quizScore${index}_Timestamp`];
+          const isDisabled = timestamp
+            ? new Date() > new Date(new Date(timestamp).getTime() + 2 * 60 * 60 * 1000)
+            : false;
+
+          return (
+            (
+              !record.ScoringType ? (
+                <Input
+                  className="no-spinner"
+                  disabled={isDisabled}
+                  type="number"
+                  min={0}
+                  max={10}
+                  step={0.1}
+                  value={record[`QuizScore${index}`] ?? ""}
+                  onChange={(e) => handleChange(record.id, `QuizScore${index}`, e.target.value)}
+                />
+              ) : (
+                <Select
+                  value={record[`QuizScore${index}`] ?? ""}
+                  onChange={(e) => handleChange(record.id, `QuizScore${index}`, e)}
+                  disabled={isDisabled}
+                >
+                  <Select.Option value={1}>Đ</Select.Option>
+                  <Select.Option value={0}>CĐ</Select.Option>
+                </Select>
+              )
+            )
+          );
+        },
+      })),
     },
     {
       title: (
@@ -230,53 +327,41 @@ const ScoreTable = ({ students, year, subjectId }) => {
           </div>
         </>
       ),
-      dataIndex: "TESTSCORE",
-      key: "TESTSCORE",
+      dataIndex: "TestScore",
+      key: "TestScore",
       align: "center",
       sorter: (a, b) => a.code.localeCompare(b.code),
       sortDirections: ["ascend", "descend"],
       width: 100,
-      width: 100,
-      render: (text, record) => (
-        <Input
-          type="number"
-          min={0}
-          max={10}
-          step={0.1}
-          value={record.TESTSCORE}
-          onChange={(e) => handleChange(record.id, "TESTSCORE", e.target.value)}
-        />
-      ),
-    },
-    {
-      title: (
-        <>
-          Giữa kỳ
-          <div style={{fontSize: "12px", fontStyle: "italic", color: "blue", opacity: "0.6"}}>Chỉnh sửa lần cuối</div>
-          <div style={{ fontSize: "12px", fontStyle: "italic", color: "green" }}>
-            {scores?.length > 0 && scores[scores.length - 1].midTermScore_Timestamp
-              ? new Date(scores[scores.length - 1].midTermScore_Timestamp).toLocaleString()
-              : "Chưa có dữ liệu"}
-          </div>
-        </>
-      ),
-      dataIndex: "MIDTERMSCORE",
-      key: "MIDTERMSCORE",
-      align: "center",
-      sorter: (a, b) => a.code.localeCompare(b.code),
-      sortDirections: ["ascend", "descend"],
-      width: 100,
-      width: 100,
-      render: (text, record) => (
-        <Input
-          type="number"
-          min={0}
-          max={10}
-          step={0.1}
-          value={record.MIDTERMSCORE}
-          onChange={(e) => handleChange(record.id, "MIDTERMSCORE", e.target.value)}
-        />
-      ),
+      render: (text, record) => {
+        const timestamp = record.testScore_Timestamp;
+        const isDisabled = timestamp
+            ? new Date() > new Date(new Date(timestamp).getTime() + 7 * 24 * 60 * 60 * 1000)
+            : false;
+        return (
+          !record.ScoringType ? (
+            <Input
+              className="no-spinner"
+              disabled={isDisabled}
+              type="number"
+              min={0}
+              max={10}
+              step={0.1}
+              value={record.TestScore}
+              onChange={(e) => handleChange(record.id, `TestScore`, e.target.value)}
+            />
+          ) : (
+            <Select
+              value={record.TestScore}
+              onChange={(e) => handleChange(record.id, `TestScore`, e)}
+              disabled={isDisabled}
+            >
+              <Select.Option value={1}>Đ</Select.Option>
+              <Select.Option value={0}>CĐ</Select.Option>
+            </Select>
+          )
+        )
+      }
     },
     {
       title: (
@@ -290,24 +375,89 @@ const ScoreTable = ({ students, year, subjectId }) => {
           </div>
         </>
       ),
-      dataIndex: "FINALEXAMSCORE",
-      key: "FINALEXAMSCORE",
+      dataIndex: "FinalExamScore",
+      key: "FinalExamScore",
       align: "center",
       sorter: (a, b) => a.code.localeCompare(b.code),
       sortDirections: ["ascend", "descend"],
       width: 100,
+      render: (text, record) =>{
+        const timestamp = record.finalEvaluation_Timestamp;
+        const isDisabled = timestamp
+            ? new Date() > new Date(new Date(timestamp).getTime() + 7 * 24 * 60 * 60 * 1000)
+            : false;
+        return (
+          !record.ScoringType ? (
+            <Input
+              className="no-spinner"
+              disabled={isDisabled}
+              type="number"
+              min={0}
+              max={10}
+              step={0.1}
+              value={record[`FinalExamScore`] ?? ""}
+              onChange={(e) => handleChange(record.id, `FinalExamScore`, e.target.value)}
+            />
+          ) : (
+            <Select
+              value={record[`FinalExamScore`] ?? ""}
+              onChange={(e) => handleChange(record.id, `FinalExamScore`, e)}
+              disabled={isDisabled}
+            >
+              <Select.Option value={1}>Đ</Select.Option>
+              <Select.Option value={0}>CĐ</Select.Option>
+            </Select>
+          )
+        )
+      }
+    },
+
+    {
+      title: (
+        <>
+          TBM Cuối kỳ
+        </>
+      ),
+      dataIndex: "AverageScore",
+      key: "AverageScore",
+      align: "center",
+      sorter: (a, b) => a?.AverageScore.localeCompare(b?.AverageScore),
+      sortDirections: ["ascend", "descend"],
       width: 100,
       render: (text, record) => (
-        <Input
-          type="number"
-          min={0}
-          max={10}
-          step={0.1}
-          value={record.FINALEXAMSCORE}
-          onChange={(e) => handleChange(record.id, "FINALEXAMSCORE", e.target.value)}
-        />
+        record.AverageScore ? (
+          record.ScoringType == true ? (record.AverageScore >= 0.5 ? "Đạt" : "Chưa Đạt") :(
+            record.AverageScore.toFixed(2)
+          )
+        ) : "Chưa có"
+        
       ),
     },
+    ...(selectedSemester == 2
+      ? [
+          {
+            title: (
+              <>
+                TBM Cả năm
+              </>
+            ),
+            dataIndex: "FinalAverageSubjectScore",
+            key: "FinalAverageSubjectScore",
+            align: "center",
+            sorter: (a, b) => a?.FinalAverageSubjectScore.localeCompare(b?.FinalAverageSubjectScore),
+            sortDirections: ["ascend", "descend"],
+            width: 100,
+            render: (text, record) => (
+              record.FinalAverageSubjectScore ? (
+                record.ScoringType == true ? (record.FinalAverageSubjectScore >= 0.5 ? "Đạt" : "Chưa Đạt") :(
+                  record.FinalAverageSubjectScore.toFixed(2)
+                )
+              ) : "Chưa có"
+              
+            ),
+          },
+        ]
+      : []),
     {
       title: (
         <>
@@ -322,14 +472,15 @@ const ScoreTable = ({ students, year, subjectId }) => {
           </div>
         </>
       ),
-      dataIndex: "finalEvaluation",
-      key: "finalEvaluation",
+      dataIndex: "Comment",
+      key: "Comment",
       width: 200,
       render: (text, record) => (
         <Input
           placeholder="Nhận xét"
-          value={record.finalEvaluation || ""}
-          onChange={(e) => handleChange(record.id, "finalEvaluation", e.target.value)}
+          disabled={record.finalEvaluation_Expire != null && currentTime > record.finalEvaluation_Expire}
+          value={record.Comment || ""}
+          onChange={(e) => handleChange(record.id, "Comment", e.target.value)}
         />
       ),
     },
@@ -338,6 +489,20 @@ const ScoreTable = ({ students, year, subjectId }) => {
 
   return (
     <div>
+      {/* CSS để ẩn spinner */}
+      <style>
+        {`
+          .no-spinner::-webkit-outer-spin-button,
+          .no-spinner::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+          }
+
+          .no-spinner[type=number] {
+            -moz-appearance: textfield;
+          }
+        `}
+      </style>
       <Row justify="center" align="middle" style={{ textAlign: "center", marginBottom: 20 }}>
         <Col>
           <Title level={3} style={{ marginBottom: 0, color: "#333" }}>
@@ -346,8 +511,8 @@ const ScoreTable = ({ students, year, subjectId }) => {
         </Col>
         <Col>
           <Select style={{ width: 120, marginLeft: 20 }} onChange={setSelectedSemester} defaultValue={selectedSemester}>
-            <Option value="1">HK1</Option>
-            <Option value="2">HK2</Option>
+            <Option value={1}>HK1</Option>
+            <Option value={2}>HK2</Option>
           </Select>
         </Col>
       </Row>
@@ -358,11 +523,25 @@ const ScoreTable = ({ students, year, subjectId }) => {
         pagination={false}
         bordered
         scroll={{ x: "100%", y: 800 }}
+        sticky
       />
-      <Row align="stretch" justify="end" className="mt-4">
-      <Button color="pink" variant="outlined" className="mr-4">Đặt lại</Button>
-      <Button onClick={handleUpdateScore} type="primary">Lưu thay đổi</Button>
-    </Row>
+      <Row className="mt-4 flex justify-between items-stretch">
+        <div>
+          <ExportExcelButton
+            data={csvScoreData}
+            headers={headers}
+            fileName={`bang-cham-diem-${subject.subjectId}-${year}-${selectedSemester}.xlsx`}
+            classData={classData}
+            subject={subject}
+            year={year}
+            semester={selectedSemester}
+          />
+        </div>
+        <div>
+          <Button color="pink" variant="outlined" className="mr-4">Đặt lại</Button>
+          <Button onClick={handleUpdateScore} type="primary">Lưu thay đổi</Button>
+        </div>
+      </Row>
     </div>
   );
 };

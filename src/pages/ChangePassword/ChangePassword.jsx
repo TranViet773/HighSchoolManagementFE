@@ -19,7 +19,7 @@ const ChangePasswordPage = () => {
                 autoClose: 1500,
             });
             setTimeout(() => {
-                window.location.href = "/teacher"; // Chuyển về trang đăng nhập sau khi đổi mật khẩu
+                window.location.href = "/"; // Chuyển về trang đăng nhập sau khi đổi mật khẩu
             }, 1500);
         } catch (error) {
             toast.error(error.message || "Đổi mật khẩu thất bại.", {

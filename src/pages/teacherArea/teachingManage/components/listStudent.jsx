@@ -5,7 +5,6 @@ import { SearchOutlined } from "@ant-design/icons";
 const ListStudent = ({ studentData }) => {
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
-
   const [sortOrder, setSortOrder] = useState(null);
 
   // Khi component render lần đầu, đảm bảo hiển thị danh sách học sinh

@@ -10,21 +10,20 @@ const ScoreService = {
             return { data: response.data, status: response.code };
         }catch(error){
             console.error("error: " + error);
-            toast.error("Lỗi: " + error);
+            //toast.error("Lỗi: " + error);
         }
     },
 
     async GetScoreBoard({studentId, year, semester}){
         try{
-            semester = parseInt(semester, 10);
-            console.log(semester);
+            //semester = parseInt(semester, 10);
             const response = await axiosInstance.get(`/Score/semester/${semester}`, {
                 params: { year, studentId } // 👈 Truyền vào query parameters
             });
             return { data: response.data, status: response.code };
         }catch(error){
             console.error("error: " + error);
-            toast.error("Lỗi: " + error);
+            //toast.error("Lỗi: " + error);
         }
     },
 
@@ -41,6 +40,21 @@ const ScoreService = {
             return { data: null, status: 500 }; // Trả về lỗi mặc định
         }
     },
+
+    async InitializeScoreBoardForSubject({ studentId, year, semester, subjectId }) {
+        try {
+            const response = await axiosInstance.post(`/Score/scoreboard/${subjectId}`, null, {
+                params: { studentId, year, semester }
+            });
+    
+            return { data: response.data, status: response.status };
+        } catch (e) {
+            console.error("error: " + e);
+            toast.error("Lỗi: " + e.message);
+            return { data: null, status: 500 }; // Trả về lỗi mặc định
+        }
+    },
+
     //Lấy danh sách điểm số 1 môn học của các học sinh học tại lớp nào đó.
     async GetScoreBySubject({ subjectId, year, semester, studentIds }) {
         try {
@@ -59,7 +73,8 @@ const ScoreService = {
     async UpdateScoreOfSubjectByColumn({subjectId, year, semester, scores}){
         try{
             console.log("data servie")
-            console.log(scores)
+            
+            console.log({subjectId, year, semester, scores})
             const response = await axiosInstance.put(`/Score/subject/${subjectId}?year=${year}&semester=${semester}`,scores);
             return {data: response.data, status: response.status}
         }catch(e){
@@ -76,10 +91,62 @@ const ScoreService = {
             console.log("Lỗi trong quá trình lấy duwxx liệu: " + e);
         }
 
-    }
-    
-    
-    
+    },
 
+    async GetScoreToPrint({studentId, semesterStart, semesterEnd, yearStart, yearEnd}){
+        try{
+            const response = await axiosInstance.get(`/Score/print/?studentId=${studentId}&semesterStart=${semesterStart}&semesterEnd=${semesterEnd}&yearStart=${yearStart}&yearEnd=${yearEnd}`);
+            return {data: response.data, status: response.status}
+        }catch(e){
+            console.log(e);
+        }
+    },
+
+    async GetResultFinalYear({studentId, year}){
+        try{
+            const response = await axiosInstance.get(`/Score/final-result/${studentId}/${year}`);
+            return {data: response.data, status: response.status}
+        }catch(e){
+            console.log(e);
+        }
+    },
+    
+    async StatisticalAvgSubject({studentId, year}){
+        try{
+            const response = await axiosInstance.get(`/Score/statistical-avgscore/${studentId}/${year}`);
+            return {data: response.data, status: response.status}
+        }catch(e){
+            console.log(e);
+        }
+    },
+
+    async GetScoreBoardAllStudentOfClassInSemester({classId, semester, year}){
+        try{
+            const response = await axiosInstance.get(`/Score/score-all-student/${classId}?year=${year}&semester=${semester}`);
+            return {data: response.data, status: response.status}
+        }catch(e){
+            console.log(e);
+        }
+    },
+
+    async GetFinalResultStudentsInClass({classId, semester, year}){
+        try{
+            const response = await axiosInstance.get(`/Score/final-result-class/${classId}?year=${year}&semester=${semester}`);
+            return {data: response.data, status: response.status}
+        }catch(e){
+            console.log(e);
+            return {error: e}
+        }
+    },
+
+    async GetScoreRatioOfClass({classId, semester, year, subjectId}){
+        try{
+            const response = await axiosInstance.get(`/Score/ratio-score/${classId}/subject/${subjectId}?year=${year}&semester=${semester}`);
+            return {data: response.data, status: response.status}
+        }catch(e){
+            console.log(e);
+            return {error: e}
+        }
+    },
 }
 export default ScoreService;

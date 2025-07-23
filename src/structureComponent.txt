@@ -1,0 +1,11 @@
+DetailTeacher 
+    -   ListClassAdvisorComponent
+        -   DashboardClassAdvisorInfo
+            -   ListStudentOfClassComponent
+                - InfoAndScoreBoardOfStudent
+
+    -   ListClassTeachingComponent
+        -   DashboardClassInfor
+            -   StatisticalsScoreOfClass
+            -   ScoreBoardOfClassComponent
+        -   Timeline

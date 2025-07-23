@@ -4,7 +4,12 @@ import { useEffect, useState } from "react";
 import Sidebar from "../../../components/SideBarComponent/SidebarComponent";
 import StudentService from "../../../services/studentService";
 import { SearchOutlined } from "@ant-design/icons";
+import getCurrentYear from "../../../utils/year.util";
+import AuthService from "../../../services/authService";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
+const {schoolYear, listYear, semester} = getCurrentYear();
 const { Content } = Layout;
 const { Option } = Select;
 
@@ -18,7 +23,8 @@ const HomeTeacherPage = () => {
   const [searchQuery, setSearchQuery] = useState(null); // Lưu giá trị tìm kiếm
   const [selectedCodeClass, setSelectedCodeClass] = useState(null); 
   const pageSize = 50; // Số học sinh mỗi trang
-
+  const [searchText, setSearchText] = useState("");
+  const navigate = useNavigate();
   // Gọi API lấy danh sách học sinh
   useEffect(() => {
     fetchStudents();
@@ -58,11 +64,24 @@ const HomeTeacherPage = () => {
   };
   
 
-  // Hàm xử lý block học sinh
-  const handleBlockStudent = (studentId) => {
-    message.success(`Học sinh có ID ${studentId} đã bị block.`);
+  // Hàm xử lý block
+  const handleBlockStudent = async (studentId) => { // sửa lại thành chức năng vô hiệu hóa
+    const {data} = await AuthService.BlockAndUnblock(studentId);
+    console.log(data.code);
+    if (data.code == "200") {
+      toast.success("Cập nhật thành công!");
+      fetchStudents();
+    } else {
+      toast.error(`Lỗi khi cập nhật trạng thái học sinh có ID ${studentId}: ${data.message}`);
+    }
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && searchText.trim() !== "") {
+      handleFilterChange(searchText.trim(), "year");
+    }
+  };
+  
   // Cấu hình các cột của bảng
   const columns = [
     {
@@ -77,12 +96,12 @@ const HomeTeacherPage = () => {
       key: "classcode",
     },
     {
-      title: "Mã HS",
+      title: "Mã Cán bộ",
       dataIndex: "code",
       key: "code",
     },
     {
-      title: "Tên HS",
+      title: "Tên Cán bộ",
       key: "studentName",
       render: (record) => `${record.lastName || ""} ${record.firstName || ""}`.trim(),
     },
@@ -96,8 +115,8 @@ const HomeTeacherPage = () => {
       key: "actions",
       render: (_, record) => (
         <Space>
-          <Button danger onClick={() => handleBlockStudent(record.studentId)}>
-            Block
+          <Button danger onClick={() => handleBlockStudent(record.id)}>
+           {record.isBlocked ? "Mở khóa" : "Khóa"}
           </Button>
         </Space>
       ),
@@ -117,14 +136,23 @@ const HomeTeacherPage = () => {
             </Col>
             <Col>
               <Select
-                placeholder="Chọn năm học"
+                showSearch
+                placeholder="Chọn hoặc nhập năm học"
                 style={{ width: 150 }}
+                onSearch={(value) => setSearchText(value)}
                 onChange={(value) => handleFilterChange(value, "year")}
+                onKeyDown={handleKeyDown}
                 value={selectedYear}
+                allowClear
+                filterOption={(input, option) =>
+                  option?.children?.toLowerCase().includes(input.toLowerCase())
+                }
               >
-                <Option value="2023">2023</Option>
-                <Option value="2024">2024</Option>
-                <Option value="2025">2025</Option>
+                {listYear.map((year) => (
+                  <Option key={year} value={year}>
+                    {year}
+                  </Option>
+                ))}
               </Select>
             </Col>
 
@@ -149,7 +177,10 @@ const HomeTeacherPage = () => {
             pagination={{
               pageSize: pageSize,
               onChange: (page) => setCurrentPage(page),
-            }}
+            }} 
+            onRow={(record) => ({
+              onClick: () => {navigate(`/admin/teacher/${record.id}`)},
+            })}
           />
         </Content>
       </Layout>

@@ -5,17 +5,11 @@ import Sidebar from "../../components/SideBarComponent/SidebarComponent";
 import { SearchOutlined } from "@ant-design/icons";
 import ClassService from "../../services/classService";
 import { toast } from "react-toastify";
+import getCurrentYear from "../../utils/year.util";
 
+const { schoolYear, listYear, semester } = getCurrentYear();
 const { Content } = Layout;
 const { Option } = Select;
-const curYear = new Date().getFullYear();
-const schoolYear = `${curYear}-${curYear + 1}`;
-const optionSchoolYear = [
-  `${curYear - 2}-${curYear - 1}`,
-  `${curYear - 1}-${curYear}`,
-  `${curYear}-${curYear + 1}`,
-];
-
 
 const HomeClassPage = () => {
   const [classes, setClasses] = useState([]);
@@ -23,6 +17,7 @@ const HomeClassPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedYear, setSelectedYear] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchText, setSearchText] = useState(""); // dùng cho nhập tay
   const navigate = useNavigate();
   const pageSize = 50;
 
@@ -35,14 +30,13 @@ const HomeClassPage = () => {
     try {
       const { data } = await ClassService.getAll(year || schoolYear);
       let filteredClasses = data.data;
-  
-      // Nếu có query, lọc theo tên lớp
+
       if (query) {
         filteredClasses = filteredClasses.filter((cls) =>
           cls.classes_Name.toLowerCase().includes(query.toLowerCase())
         );
       }
-  
+
       setClasses(filteredClasses);
     } catch (error) {
       message.error("Lỗi khi tải danh sách lớp học!");
@@ -64,17 +58,22 @@ const HomeClassPage = () => {
   const handleDelete = async (id) => {
     setLoading(true);
     try {
-      const result = await ClassService.deleteClass(id);
-        toast.success("Xóa lớp học thành công!");
-        fetchClasses(selectedYear, searchQuery);
-        setClasses((prevClasses) => prevClasses.filter((cls) => cls.classes_Code !== id));
+      await ClassService.deleteClass(id);
+      toast.success("Xóa lớp học thành công!");
+      fetchClasses(selectedYear, searchQuery);
     } catch (error) {
       message.error("Có lỗi xảy ra khi xóa lớp học!");
     } finally {
       setLoading(false);
     }
   };
-  
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && searchText.trim() !== "") {
+      setSelectedYear(searchText.trim());
+      handleFilterChange(searchText.trim(), "year");
+    }
+  };
 
   const columns = [
     {
@@ -94,9 +93,9 @@ const HomeClassPage = () => {
       key: "classes_Code",
     },
     {
-        title: "Số lượng",
-        dataIndex: "classes_Quantity",
-        key: "classes_Quantity",
+      title: "Số lượng",
+      dataIndex: "classes_Quantity",
+      key: "classes_Quantity",
     },
     {
       title: "Thao tác",
@@ -109,16 +108,6 @@ const HomeClassPage = () => {
         </Space>
       ),
     },
-    // {
-    //   title: "Năm Học",
-    //   dataIndex: "year",
-    //   key: "year",
-    // },
-    // {
-    //   title: "Giảng viên Cố vấn",
-    //   dataIndex: "advisor",
-    //   key: "advisor",
-    // },
   ];
 
   return (
@@ -134,14 +123,23 @@ const HomeClassPage = () => {
             </Col>
             <Col>
               <Select
-                placeholder="Chọn năm học"
-                style={{ width: 150 }}
-                onChange={(value) => handleFilterChange(value, "year")}
+                showSearch
+                placeholder="Chọn hoặc nhập năm học"
+                style={{ width: 180 }}
+                allowClear
                 value={selectedYear}
+                onSearch={(val) => setSearchText(val)}
+                onChange={(val) => handleFilterChange(val, "year")}
+                onKeyDown={handleKeyDown}
+                filterOption={(input, option) =>
+                  option?.children?.toLowerCase().includes(input.toLowerCase())
+                }
               >
-                {optionSchoolYear.map((year, index) =>{
-                  return <Option value={year}>{year}</Option>
-                })}
+                {listYear.map((year) => (
+                  <Option key={year} value={year}>
+                    {year}
+                  </Option>
+                ))}
               </Select>
             </Col>
             <Col flex="auto">
@@ -165,7 +163,7 @@ const HomeClassPage = () => {
               onChange: (page) => setCurrentPage(page),
             }}
             onRow={(record) => ({
-              onClick: () => navigate(`/admin/class/${record.classes_Id}`), // Chuyển hướng khi click vào hàng
+              onClick: () => navigate(`/admin/class/${record.classes_Id}`),
             })}
           />
         </Content>

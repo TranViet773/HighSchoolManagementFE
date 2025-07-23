@@ -1,46 +1,113 @@
-import React from "react";
-import { Layout, Menu } from "antd";
-import { DesktopOutlined, UserOutlined, BankOutlined, BookOutlined } from "@ant-design/icons";
+import React, { useState } from "react";
+import {
+  UserOutlined,
+  TeamOutlined,
+  SolutionOutlined,
+  ScheduleOutlined,
+  FileTextOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+  BookOutlined,
+  BarChartOutlined,
+} from "@ant-design/icons";
+import { Layout, Menu, Button } from "antd";
 import { useLocation, Link } from "react-router-dom";
-import { Library, Users, Briefcase } from "lucide-react";
-import "../SideBarComponent/SideBar.css";
+import "./SideBar.css";
 
 const { Sider } = Layout;
 
 const Sidebar = () => {
-  const location = useLocation(); // Lấy URL hiện tại
-  const selectedKey = location.pathname; // Gán key theo đường dẫn
+  const [collapsed, setCollapsed] = useState(false);
+  const toggleCollapsed = () => {
+    setCollapsed(!collapsed);
+  };
+
+  const location = useLocation();
+
+  // Xác định selectedKey dựa vào pathname
+  const selectedKey = (() => {
+    const path = location.pathname;
+    if (path.startsWith('/admin/teacher')) return '/admin/teacher';
+    if (path.startsWith('/admin/student')) return '/admin/student';
+    if (path.startsWith('/admin/staff')) return '/admin/staff';
+    if (path.startsWith('/admin/score')) return '/admin/score';
+    if (path.startsWith('/admin/schedule')) return '/admin/schedule';
+    if (path.startsWith('/admin/class')) return '/admin/class';
+    if (path.startsWith('/admin/upgrade-class')) return '/admin/upgrade-class';
+    if (path.startsWith('/admin/subject')) return '/admin/subject';
+    if (path.startsWith('/admin/submit')) return '/admin/submit';
+    if (path.startsWith('/admin/statistical')) return '/admin/statistical';
+    return '';
+  })();
 
   return (
-    <Sider width={250} className="text-white shadow-lg sidebar-custom">
-      <div className="flex items-center justify-center p-6">
-        <h2 className="text-2xl font-bold text-white">Quản lý hệ thống</h2>
+    <Sider
+      collapsible
+      collapsed={collapsed}
+      trigger={null}
+      width={250}
+      className="shadow-lg sidebar-custom"
+    >
+      <div className="flex items-center justify-between px-4 py-3 bg-blue-600">
+        <h2 className="text-lg text-white font-bold">
+          {!collapsed && "Quản trị viên"}
+        </h2>
+        <Button
+          type="text"
+          onClick={toggleCollapsed}
+          icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+          className="text-white"
+        />
       </div>
+
       <Menu
         mode="inline"
         theme="dark"
-        selectedKeys={[selectedKey]} // Dùng selectedKeys thay vì defaultSelectedKeys
-        className="text-white"
+        selectedKeys={[selectedKey]}
+        defaultOpenKeys={["account", "academic"]}
       >
-        {/* Quản lý nhân viên */}
-        <Menu.Item key="/" icon={<DesktopOutlined />} className="hover:bg-blue-700">
-          <Link to="/" className="text-white hover:text-yellow-300">Quản lý nhân viên</Link>
+        {/* Quản lý tài khoản */}
+        <Menu.SubMenu key="account" icon={<TeamOutlined />} title="Quản lý tài khoản">
+          <Menu.Item key="/admin/teacher" icon={<UserOutlined />}>
+            <Link to="/admin/teacher">Giáo viên</Link>
+          </Menu.Item>
+          <Menu.Item key="/admin/student" icon={<UserOutlined />}>
+            <Link to="/admin/student">Học sinh</Link>
+          </Menu.Item>
+          <Menu.Item key="/admin/staff" icon={<SolutionOutlined />}>
+            <Link to="/admin/staff">Nhân viên</Link>
+          </Menu.Item>
+        </Menu.SubMenu>
+
+        {/* Quản lý học vụ */}
+        <Menu.SubMenu key="academic" icon={<ScheduleOutlined />} title="Quản lý học vụ">
+          {/* <Menu.Item key="/admin/score" icon={<FileTextOutlined />}>
+            <Link to="/admin/score">Điểm số</Link>
+          </Menu.Item>*/}
+          <Menu.Item key="/admin/upgrade-class" icon={<ScheduleOutlined />}>
+            <Link to="/admin/upgrade-class">Nâng lớp</Link>
+          </Menu.Item> 
+          <Menu.Item key="/admin/class" icon={<ScheduleOutlined />}>
+            <Link to="/admin/class">Lớp Học</Link>
+          </Menu.Item>
+          <Menu.Item key="/admin/subject" icon={<BookOutlined />}>
+            <Link to="/admin/subject">Quản lý môn học</Link>
+          </Menu.Item>
+        </Menu.SubMenu>
+
+        {/* Quản lý môn học */}
+
+        {/* Phúc khảo & Khiếu nại */}
+        <Menu.Item key="/admin/submit" icon={<FileTextOutlined />}>
+          <Link to="/admin/submit">Phúc khảo & Khiếu nại</Link>
         </Menu.Item>
 
-        {/* Quản lý học sinh */}
-        <Menu.Item key="/admin/student" icon={<UserOutlined />} className="hover:bg-blue-700">
-          <Link to="/admin/student" className="text-white hover:text-yellow-300">Quản lý học sinh</Link>
+        {/* Báo cáo & Thống kê */}
+        <Menu.Item key="/admin/statistical" icon={<BarChartOutlined />}>
+          <Link to="/admin/statistical">Thống kê</Link>
         </Menu.Item>
-
-        {/* Quản lý giáo viên */}
-        <Menu.Item key="/admin/teacher" icon={<Briefcase  />} className="hover:bg-blue-700">
-          <Link to="/admin/teacher" className="text-white hover:text-yellow-300">Quản lý giáo viên</Link>
-        </Menu.Item>
-        <Menu.Item key="/admin/class" icon={<BankOutlined  />} className="hover:bg-blue-700">
-          <Link to="/admin/class" className="text-white hover:text-yellow-300">Quản lý lớp học</Link>
-        </Menu.Item>
-        <Menu.Item key="/admin/subject" icon={<BookOutlined  />} className="hover:bg-blue-700">
-          <Link to="/admin/subject" className="text-white hover:text-yellow-300">Quản lý môn học</Link>
+        <Menu.Item key="/admin/statistical" icon={<BarChartOutlined />}>
+          <Link to="/admin/statistical">Cài đặt thông tin hệ thống</Link>
         </Menu.Item>
       </Menu>
     </Sider>

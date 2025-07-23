@@ -1,21 +1,34 @@
-import { Layout, Table, Button, Space, Row, Col, Card, Typography, Modal, Input } from "antd";
+import {
+  Layout, Table, Button, Space, Row, Col, Card, Typography,
+  Modal, Input, Segmented
+} from "antd";
+import { EditTwoTone } from '@ant-design/icons';
+import ModalTeacherSelect from "./ModalComponent/modalChangeAdvisor";
 import { useNavigate, useParams } from "react-router-dom";
 import Sidebar from "../../components/SideBarComponent/SidebarComponent";
 import { useEffect, useState } from "react";
-import ClassService from "../../services/classService"; // Giả định có service lấy dữ liệu
+import ClassService from "../../services/classService";
 import { toast } from "react-toastify";
+import AssignTeachingComponent from "./AssignTeachingComponent";
+import UpdateStudentModal from "./ModalComponent/UpdateStudentModal";
 
 const { Content } = Layout;
 const { Title } = Typography;
 
 const DetailClassPage = () => {
-  const { id } = useParams(); // Lấy id lớp học từ URL
+  const { id } = useParams();
   const [classDetail, setClassDetail] = useState(null);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [studentCode, setStudentCode] = useState("");
+  const [visible, setVisible] = useState(false);
+  const [selectedTab, setSelectedTab] = useState("Danh sách học sinh");
+
+  // Modal chuyển lớp
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  
 
   useEffect(() => {
     fetchClassDetail();
@@ -24,7 +37,7 @@ const DetailClassPage = () => {
   const fetchClassDetail = async () => {
     try {
       setLoading(true);
-      const { data } = await ClassService.getClass(id); // API lấy thông tin lớp
+      const { data } = await ClassService.getClass(id);
       setClassDetail(data.data);
       setStudents(data.data.students);
     } catch (error) {
@@ -34,39 +47,22 @@ const DetailClassPage = () => {
     }
   };
 
-  // Mở popup nhập mã học sinh
-  const showAddStudentModal = () => {
-    setIsModalOpen(true);
-  };
-
-  // Đóng popup
-  const handleCancel = () => {
-    setIsModalOpen(false);
-    setStudentCode(""); // Xóa input sau khi đóng
-  };
-
-  // Xử lý thêm học sinh
   const handleAddStudent = async () => {
     if (!studentCode.trim()) {
       toast.warning("Vui lòng nhập mã học sinh!");
       return;
     }
-    
     try {
-      console.log(studentCode,id);
-      await ClassService.addStudentToClass(studentCode, id);
+      await ClassService.addStudentToClass(studentCode, id, classDetail.year);
       toast.success("Thêm học sinh thành công!");
-      
-      // Cập nhật danh sách học sinh
       setStudents([...students, { id: Math.random(), code: studentCode }]);
-      
-      handleCancel(); // Đóng modal sau khi thêm thành công
+      setIsModalOpen(false);
+      setStudentCode("");
     } catch (error) {
       toast.error("Thêm học sinh thất bại!");
     }
   };
 
-  // Xử lý xóa học sinh
   const handleDeleteStudent = async (studentCode) => {
     try {
       await ClassService.deleteStudentFromClass(studentCode, id);
@@ -80,42 +76,22 @@ const DetailClassPage = () => {
   const columns = [
     {
       title: "STT",
-      dataIndex: "index",
-      key: "index",
       render: (_, __, index) => index + 1,
     },
-    {
-      title: "Mã HS",
-      dataIndex: "code",
-      key: "code",
-    },
-    {
-      title: "Tên HS",
-      dataIndex: "fullName",
-      key: "fullName",
-    },
-    {
-      title: "Email",
-      dataIndex: "email",
-      key: "email",
-    },
+    { title: "Mã HS", dataIndex: "code" },
+    { title: "Tên HS", dataIndex: "fullName" },
+    { title: "Email", dataIndex: "email" },
     {
       title: "Giới Tính",
       dataIndex: "gender",
-      key: "gender",
-      render: (gender) => (gender === "Male" ? "Nam" : "Nữ"),
+      render: (g) => (g === "Male" ? "Nam" : "Nữ"),
     },
-    {
-      title: "Ngày Sinh",
-      dataIndex: "dob",
-      key: "dob",
-    },
+    { title: "Ngày Sinh", dataIndex: "dob" },
     {
       title: "Thao tác",
-      key: "actions",
       render: (_, record) => (
         <Button danger onClick={() => handleDeleteStudent(record.code)}>
-          Xóa
+          Xóa khỏi lớp
         </Button>
       ),
     },
@@ -130,33 +106,65 @@ const DetailClassPage = () => {
             <Row justify="space-between" align="middle">
               <Col>
                 <Title level={4}>{classDetail?.classes_Name}</Title>
-                <p>Mã Lớp: {classDetail?.classes_Code} - Sĩ Số: {classDetail?.classes_Quantity}</p>
-                <h3>Chủ nhiệm: </h3><span>{classDetail?.advisor}</span>
+                <p>
+                  Mã Lớp: {classDetail?.classes_Code} - Sĩ Số: {classDetail?.classes_Quantity}
+                </p>
+                <h3>Chủ nhiệm:</h3>
+                <span>
+                  {classDetail?.advisor}
+                  <Button onClick={() => setVisible(true)} style={{ marginLeft: 8 }}>
+                    <EditTwoTone />
+                  </Button>
+                </span>
               </Col>
               <Col>
-                <Button type="primary" onClick={showAddStudentModal}>Thêm mới học sinh</Button>
+                <Button type="primary" onClick={() => setIsModalOpen(true)}>
+                  Thêm học sinh vào lớp
+                </Button>
+                <Button
+                  style={{ marginLeft: "8px" }}
+                  onClick={() => setIsUpdateModalOpen(true)}
+                >
+                  Cập nhật danh sách học sinh
+                </Button>
               </Col>
             </Row>
           </Card>
 
-          <Table
-            columns={columns}
-            dataSource={students}
-            rowKey="id"
-            loading={loading}
-            pagination={{ pageSize: 10 }}
-            style={{ marginTop: "20px" }}
-            onRow={(record) => ({
-              onClick: () => {navigate(`/admin/student/${record.id}`)},
-            })}
+          <Segmented
+            options={["Danh sách học sinh", "Phân công giảng dạy"]}
+            value={selectedTab}
+            onChange={(e) => setSelectedTab(e)}
           />
 
-          {/* Modal nhập mã học sinh */}
+          {selectedTab === "Danh sách học sinh" && (
+            <Table
+              columns={columns}
+              dataSource={students}
+              rowKey="id"
+              loading={loading}
+              pagination={{ pageSize: 10 }}
+              style={{ marginTop: "20px" }}
+              onRow={(record) => ({
+                onClick: () => navigate(`/admin/student/${record.id}`),
+              })}
+            />
+          )}
+
+          {selectedTab === "Phân công giảng dạy" && (
+            <AssignTeachingComponent
+              classId={id}
+              year={classDetail?.year}
+              semester={0}
+            />
+          )}
+
+          {/* Modal: Thêm học sinh */}
           <Modal
             title="Thêm học sinh vào lớp"
             open={isModalOpen}
-            onCancel={handleCancel}
-            onOk={handleAddStudent} // Gọi API khi bấm OK
+            onCancel={() => setIsModalOpen(false)}
+            onOk={handleAddStudent}
             okText="Thêm"
             cancelText="Hủy"
           >
@@ -166,6 +174,27 @@ const DetailClassPage = () => {
               onChange={(e) => setStudentCode(e.target.value)}
             />
           </Modal>
+
+          {/* Modal: Chọn giáo viên chủ nhiệm */}
+          <ModalTeacherSelect
+            visible={visible}
+            onCancel={() => setVisible(false)}
+            onSave={(teacherId) => {
+              console.log('Teacher selected:', teacherId);
+              setVisible(false);
+            }}
+            classData={classDetail}
+          />
+
+          {/* Modal: Cập nhật danh sách học sinh */}
+          {classDetail && (
+            <UpdateStudentModal
+              open={isUpdateModalOpen}
+              onClose={() => setIsUpdateModalOpen(false)}
+              currentClass={classDetail}
+              students={students}
+              />
+          )}
         </Content>
       </Layout>
     </Layout>

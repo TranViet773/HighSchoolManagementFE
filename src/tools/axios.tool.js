@@ -1,8 +1,12 @@
 import axios from "axios";
+import env from "../configs/env.config.js";
+import { getInforJwt } from "./utils.js";
 
 const axiosInstance = axios.create({
-  baseURL: "https://localhost:7142/api",
+  baseURL: env.serverUrl,
 });
+
+const intervalMs = Number(import.meta.env.VITE_CHECK_TOKEN_INTERVAL) || 30000;
 
 const getAccessToken = () => localStorage.getItem("access_token");
 const getRefreshToken = () => localStorage.getItem("refresh_token");
@@ -18,16 +22,19 @@ const logoutUser = () => {
   window.location.href = "/";
 };
 
-const checkIfTokenExpired = (token, bufferTime = 0) => {
+const checkIfTokenExpired = (bufferTime = 0) => {
   try {
-    const decoded = JSON.parse(atob(token.split(".")[1]));
-    return Date.now() >= decoded.exp * 1000 - bufferTime;
+    const info = getInforJwt();
+    if (info === "guest") return true;
+
+    const expToken = info.expToken;
+    return Date.now() >= expToken * 1000 - bufferTime;
   } catch (e) {
+    console.error("Error decoding token:", e);
     return true;
   }
 };
 
-// Biến kiểm soát việc refresh token
 let isRefreshing = false;
 let refreshSubscribers = [];
 
@@ -44,37 +51,49 @@ const refreshAccessToken = async () => {
   try {
     isRefreshing = true;
     const refreshToken = getRefreshToken();
-    
-    if (!refreshToken || checkIfTokenExpired(refreshToken)) {
-      logoutUser();
+
+    console.log("Refreshing with token:", refreshToken); // 👈 LOG NÀY
+
+    if (!refreshToken) {
+      console.log("No refresh token, logging out.");
+      //logoutUser();
       return null;
     }
 
-    const res = await axios.post("https://localhost:7142/api/Auth/refresh-token", { refreshToken });
+    const res = await axios.post(
+      `${env.serverUrl}/Auth/refresh-token`,
+      { refreshToken },
+      {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`
+        }
+      }
+    )
+
+    console.log("Refresh response:", res);
 
     if (res.status === 200) {
-      const { accessToken, refreshToken: newRefreshToken } = res.data;
-      
-      saveTokens(accessToken, newRefreshToken);
+      const { accessToken} = res.data;
+      saveTokens(accessToken, refreshToken);
       onRefreshed(accessToken);
-      
       return accessToken;
     }
   } catch (error) {
-    console.error("Refresh token failed", error);
-    logoutUser();
+    console.error("Refresh token error:", error);
+    //logoutUser();
+    return null;
   } finally {
     isRefreshing = false;
   }
 };
 
-// Interceptor request
+
 axiosInstance.interceptors.request.use(
   async (config) => {
     let accessToken = getAccessToken();
 
     if (accessToken) {
-      if (checkIfTokenExpired(accessToken)) {
+      if (checkIfTokenExpired(30000)) {
         if (!isRefreshing) {
           await refreshAccessToken();
         }
@@ -95,12 +114,11 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Interceptor response: Nếu API trả về 401, thử refresh token
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
@@ -124,17 +142,15 @@ axiosInstance.interceptors.response.use(
   }
 );
 
-// Tự động refresh token trước khi hết hạn
 const startTokenRefreshScheduler = () => {
   setInterval(async () => {
     const accessToken = getAccessToken();
-    if (accessToken && checkIfTokenExpired(accessToken, 30000)) { // 30s trước khi hết hạn
+    if (accessToken && checkIfTokenExpired(30000)) {
       await refreshAccessToken();
     }
-  }, 15000); // Kiểm tra mỗi 15 giây
+  }, intervalMs*1000*0.9); // 30 giây
 };
 
-// Chạy auto refresh khi ứng dụng khởi động
 startTokenRefreshScheduler();
 
 export async function service(axiosPromise) {
@@ -150,4 +166,5 @@ export async function service(axiosPromise) {
   }
 }
 
+export { logoutUser, saveTokens };
 export default axiosInstance;

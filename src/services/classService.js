@@ -71,9 +71,9 @@ const ClassService = {
     },
     
 
-    async addStudentToClass(studentCode, classId) {
+    async addStudentToClass(studentCode, classId, year) {
         try {
-            const response = await axiosInstance.post(`/Class/add-student?studentCode=${studentCode}&classId=${classId}`);
+            const response = await axiosInstance.post(`/Class/add-student?studentCode=${studentCode}&classId=${classId}&year=${year}`);
             return { data: response.data, status: response.status };
         } catch (error) {
             return { 
@@ -83,9 +83,22 @@ const ClassService = {
         }
     },
 
-    async changeStudentToClass(studentCode, classId) {
+    async changeStudentToClass(studentCode, classId, year) {
         try {
-            const response = await axiosInstance.post(`/Class/change-student?studentCode=${studentCode}&classId=${classId}`);
+            const response = await axiosInstance.post(`/Class/change-student?studentCode=${studentCode}&classId=${classId}&year=${year}`);
+            return { data: response.data, status: response.status };
+        } catch (error) {
+            return { 
+                error: error.response?.data || "Lỗi không xác định", 
+                status: error.response?.status || 500 
+            };
+        }
+    },
+
+    async changeStudentsToClass(studentCodes, classId, year) {
+        try {
+            console.log({studentCodes, classId, year});
+            const response = await axiosInstance.post(`/Class/change-students/class/${classId}?year=${year}`, studentCodes);
             return { data: response.data, status: response.status };
         } catch (error) {
             return { 
@@ -98,24 +111,66 @@ const ClassService = {
     // Laay danh sách lớp học mà giáo viên đó giảng dạy.
     async getClassByTeacher({id, year, semester}){
         try{
-            semester = semester === "" ? "all" : semester;
-            console.log("s " +semester)
-            const response = await axiosInstance.get(`/Class/teacher/${id}`, {
-                params:{
-                    year: year,
-                    semester: semester
-                }
-            });
+            console.log({id, year, semester})
+            const response = await axiosInstance.get(`/Class/teacher/${id}?year=${year}&semester=${semester}`);
             return {data: response.data, status: response.code}
         }catch(error){
            toast.error("Lỗi: " + error);
         }
-    }
-    
-    
+    },
 
+    async AdvanceStudentToNextClass({oldClassId, newClassId, year}){
+        try{
+            const response = await axiosInstance.post(`/Class/advance-to-next-class?oldClassId=${oldClassId}&newClassId=${newClassId}&year=${year}`, null);
+            return {data: response.data, status: response.code}
+        }catch(error){
+           toast.error("Lỗi: " + error);
+        }
+    },
+
+    async CreateClassToAdvance({listCodeClass, year}){
+        try{
+            console.log(listCodeClass)
+            const response = await axiosInstance.post(`/Class/create-class-to-advance?year=${year}`, listCodeClass);
+            return {data: response.data, status: response.code}
+        }catch(error){
+            console.log(error)
+           toast.error("Lỗi: " + error);
+        }
+    },
+
+    async UpdateAdvisorForClass({classId, teacher_Id, year, semester}){
+        try{
+            console.log({classId, teacher_Id, year, semester});
+            const response = await axiosInstance.put(`/Class/advisor/${classId}?teacherId=${teacher_Id}&year=${year}&semester=${semester}`);
+            return {data: response.data, status: response.code}
+        }catch(error){
+           toast.error("Lỗi: " + error);
+           console.log(error)
+        }
+    },
     
-    
+    async getClassByStudent({id}){
+        try{
+            const response = await axiosInstance.get(`/Class/student/${id}`);
+            return {data: response.data, status: response.code}
+        }catch(error){
+           toast.error("Lỗi: " + error);
+        }
+    },
+
+    //Nâng lớp cho nhiều học sinh (ở lại)
+    async AdvanceClassForStudents(studentCodes, classId, year) {
+        try {
+            const response = await axiosInstance.post(`/Class/advance-student/class/${classId}?year=${year}`, studentCodes);
+            return { data: response.data, status: response.status };
+        } catch (error) {
+            return { 
+                error: error.response?.data || "Lỗi không xác định", 
+                status: error.response?.status || 500 
+            };
+        }
+    } 
 };
 
 export default ClassService;

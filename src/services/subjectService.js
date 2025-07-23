@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import axiosInstance from "../tools/axios.tool";
 const SubjectService = {
     async getAll(){
@@ -16,9 +17,9 @@ const SubjectService = {
             throw error;
         }
     },
-    async createSubject({subject_Name}){
+    async createSubject({subject_Name, subject_ScoringType}){
         try {
-            const response = await axiosInstance.post(`/Subject/add`, {subject_Name: subject_Name});
+            const response = await axiosInstance.post(`/Subject/add`, {subject_Name: subject_Name, subject_ScoringType: subject_ScoringType});
             return response;
         } catch (error) {
             throw error;
@@ -84,6 +85,33 @@ const SubjectService = {
             return response;
         } catch (error) {
             throw error;
+        }
+    },
+
+    async getTeachingByClass({classId, year, semester}) {
+        try{
+            const response = await axiosInstance.get(`/Subject/teacher-by-subject/${classId}?year=${year}&semester=${semester}`);
+            return response.data;
+        }catch(error){
+            toast.error(error);
+        }
+    },
+
+    async getTeachingBySubject({subjectId, year, grade}){
+        try{
+            const response = await axiosInstance.get(`/Subject/teaching-by-subject/${subjectId}?year=${year}&grade=${grade}`);
+            return response.data;
+        }catch(error){
+            toast.error(error);
+        }
+    },
+
+    async getTeachingByTeacher({year}){
+        try{
+            const response = await axiosInstance.get(`/Subject/teaching-by-teachers?year=${year}`);
+            return response.data;
+        }catch(error){
+            toast.error(error);
         }
     }
     
